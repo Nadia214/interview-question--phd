@@ -415,6 +415,102 @@ Uses SHAP/LIME on enriched features for clinical insight.
 
 Identifies top contributing original voice features and latent patterns.
 
+
+1. Motivation & Problem Understanding
+
+Q: Why did you choose motor UPDRS prediction from voice data?
+A: Motor UPDRS is a key indicator of Parkinson’s disease progression. Voice recordings are noninvasive and easy to collect remotely, enabling early detection and monitoring without hospital visits. Our goal was to leverage machine learning to predict motor UPDRS from voice features accurately.
+
+Q: Why not predict total UPDRS or use other signals?
+A: Total UPDRS includes cognitive and ADL components, which may not correlate strongly with voice. Motor UPDRS directly reflects motor symptoms, which are more likely to influence voice characteristics. This improves signal-to-noise in our model.
+
+2. Data & Preprocessing
+
+Q: How did you handle missing data or outliers?
+A: Missing values were imputed using median values. Outliers were detected via Z-score thresholds and removed to reduce noise, ensuring stable model training.
+
+Q: Why StandardScaler over other scalers?
+A: StandardScaler centers features and scales them to unit variance, which is important for neural network training and PCA, ensuring features contribute equally to distance-based calculations.
+
+Q: How did you split the dataset?
+A: We held out 15% as a test set and used the remaining 85% for nested 10-fold cross-validation. This ensures independent evaluation while maximizing training data.
+
+Q: Did you account for patient-level grouping?
+A: Yes, we ensured voice recordings from the same patient were consistently in either training or validation folds to prevent data leakage and over-optimistic performance estimates.
+
+3. Model Architecture & Design
+
+Q: Why attention-based autoencoder?
+A: Attention mechanisms help the autoencoder focus on important feature interactions. The latent representation captures nonlinear patterns in high-dimensional voice features, improving downstream regression performance.
+
+Q: Why combine original and latent features?
+A: Original features retain interpretable biomedical information, while latent features capture hidden nonlinear relationships. Concatenating both creates a richer feature set for ML models.
+
+Q: Why add PCA and feature selection after AE?
+A: PCA reduces dimensionality and noise, while sequential feature selection retains the most predictive features. This combination improves model stability and generalization.
+
+4. Machine Learning Models
+
+Q: Why use ExtraTrees, CatBoost, XGB, etc.?
+A: Tree-based models handle high-dimensional, correlated features and are robust to outliers. Using multiple regressors allows us to compare performance and select the best model.
+
+Q: Did you tune hyperparameters?
+A: Yes, we used cross-validation with grid search to tune parameters like tree depth, number of estimators, and learning rate, balancing bias and variance.
+
+Q: Did you try neural networks for regression?
+A: We focused on tree-based models after AE feature extraction, as they provided better interpretability and stability on this dataset size. Neural networks may be explored in future work with larger datasets.
+
+5. Training & Validation
+
+Q: Why nested 10-fold CV?
+A: Nested CV prevents information leakage from hyperparameter tuning to validation. The inner loop selects features and tunes models, while the outer loop evaluates generalization.
+
+Q: How did you prevent data leakage?
+A: Each CV fold trained the autoencoder, PCA, and feature selection only on training data. Validation and test sets were strictly unseen during feature engineering.
+
+Q: How did you handle overfitting?
+A: Autoencoder used dropout, batch normalization, early stopping, and learning rate reduction. Tree-based models used depth and leaf restrictions. Metrics were monitored across folds to detect overfitting.
+
+6. Metrics & Evaluation
+
+Q: Why R², MAE, MSE, SNR, and PSNR?
+A: R² measures explained variance, MAE/MSE capture absolute errors, and SNR/PSNR quantify signal fidelity relative to noise—important for biomedical signal predictions.
+
+Q: How reliable are metrics given the small dataset?
+A: Nested CV and a held-out test set help ensure stable, unbiased performance estimates despite the dataset size.
+
+7. Interpretability & Explainability
+
+Q: How did you use SHAP/LIME?
+A: SHAP values were computed on the final model to quantify each feature’s contribution. LIME provided local explanations for individual predictions. Both original and latent features were interpretable in the context of motor UPDRS.
+
+Q: Which features contributed most?
+A: Both voice-derived jitter/shimmer measures and selected latent features had high SHAP values, indicating strong influence on predictions.
+
+8. Challenges & Limitations
+
+Q: What were the main challenges?
+A: High-dimensional voice features, small sample size, and risk of data leakage during AE training.
+
+Q: How did you overcome them?
+A: Used attention-based AE to compress features, nested CV to prevent leakage, and PCA + feature selection to reduce dimensionality.
+
+Q: Limitations?
+A: Dataset size limits generalizability; model is trained on early-stage Parkinson’s only. Latent features are less interpretable biologically.
+
+9. Novelty & Impact
+
+Q: What is novel here?
+A: Latent-enhanced AE captures nonlinear voice patterns and improves ML regression performance. Combining original + latent features and using SHAP/LIME for interpretation is novel in motor UPDRS prediction.
+
+Q: How does it impact remote monitoring?
+A: Enables noninvasive, accurate, and interpretable prediction of motor UPDRS from home-collected voice data.
+
+10. Future Work
+
+Q: How to improve the model?
+A: Increase dataset size, integrate multimodal signals (e.g., motion sensors), and explore deep learning regression models for end-to-end prediction.
+
 e. Potential Clinical Utility
 
 Enables remote, noninvasive prediction of Parkinson’s motor severity using voice data.
